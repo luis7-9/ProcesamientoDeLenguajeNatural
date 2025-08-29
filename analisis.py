@@ -1,5 +1,5 @@
 import re
-import os
+
 
 # Paso 1: Definir las categorías de tokens
 palabras_reservadas = {
@@ -55,7 +55,8 @@ delimitadores = {
     '.': 'PUNTO',
     ':': 'DOS_PUNTOS'
 }
-# ... existing code ...
+
+# ... Código de lectura de archivo
 def leer_codigo(nombre_archivo):
     try:
         # Usa la ruta del archivo relativa al directorio de trabajo actual
@@ -110,7 +111,8 @@ def tokenizar(codigo):
         pos = m.end()
         m = get_token(codigo, pos)
     return tokens
-# ... existing code ...
+
+# ... código  de clasificación ...
 def clasificar_token(token):
     if token in palabras_reservadas:
         return palabras_reservadas[token]
@@ -126,7 +128,8 @@ def clasificar_token(token):
         return 'IDENTIFICADOR'
     else:
         return 'SIMBOLO_DESCONOCIDO'
-# ... existing code ...
+
+# ... Código de guardado de resultados ...
 def guardar_resultados(resultados, nombre_archivo):
     with open(nombre_archivo, 'w', encoding='utf-8') as file:
         for token, categoria, linea, columna in resultados:
