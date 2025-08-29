@@ -1,0 +1,25 @@
+// Operaciones matemáticas
+float resultado = a + b * 2;
+
+// Condicional
+if (resultado > 50) {
+    printf("El resultado es mayor que 50.\n");
+} else {
+    printf("El resultado no es mayor que 50.\n");
+}
+
+// Bucle for
+for (int i = 0; i < 5; i++) {
+    printf("Iteración número: %d\n", i);
+}
+
+// Comentario de una línea
+
+/*
+Comentario
+de
+múltiples
+líneas
+*/
+
+return 0;
