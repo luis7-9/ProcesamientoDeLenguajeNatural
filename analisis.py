@@ -1,7 +1,7 @@
 import re
 
-
 # Paso 1: Definir las categorías de tokens
+# Estos diccionarios mapean lexemas a categorías de token
 palabras_reservadas = {
     'if': 'PALABRA_RESERVADA',
     'else': 'PALABRA_RESERVADA',
@@ -56,10 +56,14 @@ delimitadores = {
     ':': 'DOS_PUNTOS'
 }
 
-# ... Código de lectura de archivo
+
+# Paso 2: Código de lectura de archivo
 def leer_codigo(nombre_archivo):
+    """
+    Lee el contenido completo de un archivo.
+    Maneja el error si el archivo no existe.
+    """
     try:
-        # Usa la ruta del archivo relativa al directorio de trabajo actual
         with open(nombre_archivo, 'r', encoding='utf-8') as file:
             return file.read()
     except FileNotFoundError:
@@ -70,50 +74,56 @@ def leer_codigo(nombre_archivo):
 # Paso 3: Tokenización (escáner con expresiones regulares y soporte de comentarios)
 def tokenizar(codigo):
     """
+    Mejora la tokenización usando re.finditer para una lógica más robusta.
     Devuelve una lista de tuplas (lexema, linea, columna).
-    Ignora espacios y comentarios // y /* ... */.
+    Ignora espacios y comentarios.
     """
     token_spec = [
         ('COMENTARIO_ML', r'/\*[^*]*\*+(?:[^/*][^*]*\*+)*/'),
         ('COMENTARIO_SL', r'//[^\n]*'),
-        ('CADENA',        r'"([^"\\]|\\.)*"|\'([^\'\\]|\\.)*\''),
-        ('NUMERO',        r'\d+(?:\.\d+)?'),
-        ('IDENT',         r'[A-Za-z_]\w*'),
-        # Operadores multi-caracter primero
-        ('OPERADOR',      r'==|!=|<=|>=|\+\+|--|\+=|-=|\*=|/=|%='
-                          r'|&&|\|\||[+\-*/%!=<>]'),
-        ('DELIM',         r'[()\[\]{};,.:]'),
-        ('NUEVA_LINEA',   r'\n'),
-        ('ESPACIO',       r'[ \t\r]+'),
-        ('DESCONOCIDO',   r'.')
+        ('CADENA', r'"([^"\\]|\\.)*"|\'([^\'\\]|\\.)*\''),
+        ('NUMERO', r'\d+(?:\.\d+)?'),
+        ('IDENT', r'[A-Za-z_]\w*'),
+        ('OPERADOR', r'==|!=|<=|>=|\+\+|--|\+=|-=|\*=|/=|%='
+                     r'|&&|\|\||[+\-*/%!=<>]'),
+        ('DELIM', r'[()\[\]{};,.:]'),
+        ('NUEVA_LINEA', r'\n'),
+        ('ESPACIO', r'[ \t\r]+'),
+        ('DESCONOCIDO', r'.')
     ]
-    tok_regex = '|'.join(f'(?P<{name}>{regex})' for name, regex in token_spec)
-    get_token = re.compile(tok_regex, re.DOTALL).match
 
-    pos = 0
+    # Combina todas las expresiones regulares en un solo patrón
+    tok_regex = '|'.join(f'(?P<{name}>{regex})' for name, regex in token_spec)
+
     linea = 1
-    col_base = 1
     tokens = []
-    m = get_token(codigo, pos)
-    while m:
+    line_start = 0
+
+    # Itera sobre todas las coincidencias encontradas por el patrón
+    for m in re.finditer(tok_regex, codigo, re.DOTALL):
         kind = m.lastgroup
         lexema = m.group()
+
         if kind == 'NUEVA_LINEA':
             linea += 1
-            col_base = m.end() - codigo.rfind('\n', 0, m.end())
+            line_start = m.end()  # Actualiza el inicio de la nueva línea
         elif kind in ('ESPACIO', 'COMENTARIO_SL', 'COMENTARIO_ML'):
-            pass  # ignorar
+            pass  # Ignorar
         elif kind == 'DESCONOCIDO':
-            tokens.append((lexema, linea, (m.start() - codigo.rfind('\n', 0, m.start()))))
-        else:
-            columna = (m.start() - codigo.rfind('\n', 0, m.start()))
+            columna = m.start() - line_start + 1
             tokens.append((lexema, linea, columna))
-        pos = m.end()
-        m = get_token(codigo, pos)
+        else:
+            columna = m.start() - line_start + 1
+            tokens.append((lexema, linea, columna))
+
     return tokens
 
-# ... código  de clasificación ...
+
+# Paso 4: Código de clasificación
 def clasificar_token(token):
+    """
+    Clasifica un lexema en una de las categorías de token.
+    """
     if token in palabras_reservadas:
         return palabras_reservadas[token]
     elif token in operadores:
@@ -129,8 +139,12 @@ def clasificar_token(token):
     else:
         return 'SIMBOLO_DESCONOCIDO'
 
-# ... Código de guardado de resultados ...
+
+# Paso 5: Código de guardado de resultados
 def guardar_resultados(resultados, nombre_archivo):
+    """
+    Guarda los resultados del análisis en un archivo.
+    """
     with open(nombre_archivo, 'w', encoding='utf-8') as file:
         for token, categoria, linea, columna in resultados:
             file.write(f'({token}, {categoria}) @ linea {linea}, col {columna}\n')
@@ -138,11 +152,10 @@ def guardar_resultados(resultados, nombre_archivo):
 
 # Lógica principal del programa
 if __name__ == "__main__":
-    # Nombres de los archivos
     nombre_archivo_entrada = "codigo.txt"
     nombre_archivo_salida = "analisis_lexico.txt"
 
-    # Llama a las funciones sin necesidad de una ruta fija
+    # Llama a las funciones para procesar el archivo
     codigo_fuente = leer_codigo(nombre_archivo_entrada)
 
     if codigo_fuente:
